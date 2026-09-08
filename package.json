@@ -2,7 +2,19 @@
   "name": "reminder-adzan",
   "version": "0.0.0",
   "private": true,
+  "description": "Aplikasi jadwal salat modern berbasis web, dibangun dengan Vue 3, Tailwind CSS, Supabase, dan AlAdhan API.",
+  "homepage": "https://github.com/Daffa2006/reminder-adzan#readme",
+  "bugs": {
+    "url": "https://github.com/Daffa2006/reminder-adzan/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Daffa2006/reminder-adzan.git"
+  },
+  "license": "ISC",
+  "author": "",
   "type": "module",
+  "main": "vite.config.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
