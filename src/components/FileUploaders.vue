@@ -1,5 +1,6 @@
 <script setup>
-import { ref, computed, onBeforeUnmount } from 'vue'
+import { ref, computed } from 'vue'
+import { Music, UploadCloud, AlertCircle } from '@lucide/vue'
 
 const props = defineProps({
     inputId: {
@@ -10,33 +11,30 @@ const props = defineProps({
     currentAudio: {
         type: Object,
         default: null
+    },
+
+    // Blob URL untuk audio yang SUDAH tersimpan — dibuat & di-revoke oleh
+    // parent (AudioAdzanPage), bukan di sini. Ini memastikan hanya ada SATU
+    // sumber kebenaran untuk URL preview, jadi statusnya (draft/tersimpan)
+    // selalu sinkron begitu parent selesai menyimpan.
+    currentAudioUrl: {
+        type: String,
+        default: null
     }
 })
 
 const emit = defineEmits(['upload'])
 
-const selectedFile = ref(null)
-const previewUrl = ref(null)
 const error = ref('')
 
 const displayedAudio = computed(() => {
-    if (selectedFile.value && previewUrl.value) {
-        return {
-            file: selectedFile.value,
-            url: previewUrl.value,
-            isDraft: true
-        }
-    }
+    if (!props.currentAudio || !props.currentAudioUrl) return null
 
-    if (props.currentAudio) {
-        return {
-            file: props.currentAudio.file,
-            url: props.currentAudio.url,
-            isDraft: false
-        }
+    return {
+        file: props.currentAudio.file,
+        url: props.currentAudioUrl,
+        isDraft: !!props.currentAudio.isDraft
     }
-
-    return null
 })
 
 const handleFileChange = (event) => {
@@ -52,14 +50,9 @@ const handleFileChange = (event) => {
         return
     }
 
-    // Hapus preview draft sebelumnya
-    if (previewUrl.value) {
-        URL.revokeObjectURL(previewUrl.value)
-    }
-
-    selectedFile.value = file
-    previewUrl.value = URL.createObjectURL(file)
-
+    // Serahkan sepenuhnya ke parent — biar parent yang membuat blob URL
+    // draft-nya. Supaya file yang sama tidak punya dua blob URL berbeda
+    // (satu di sini, satu di parent) yang siklus hidupnya bisa tidak sinkron.
     emit('upload', file)
 
     // Supaya file yang sama bisa dipilih lagi
@@ -77,12 +70,6 @@ const formatFileSize = (bytes) => {
 
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
-
-onBeforeUnmount(() => {
-    if (previewUrl.value) {
-        URL.revokeObjectURL(previewUrl.value)
-    }
-})
 </script>
 
 <template>
@@ -90,21 +77,17 @@ onBeforeUnmount(() => {
 
         <!-- Current / selected audio -->
         <div v-if="displayedAudio" class="rounded-xl border p-4" :class="displayedAudio.isDraft
-                ? 'border-amber-200 bg-amber-50'
-                : 'border-gray-200 bg-gray-50'
+            ? 'border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-900/20'
+            : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60'
             ">
             <div class="flex items-start gap-3">
 
                 <!-- Audio icon -->
                 <div class="flex size-10 shrink-0 items-center justify-center rounded-lg" :class="displayedAudio.isDraft
-                        ? 'bg-amber-100 text-amber-700'
-                        : 'bg-gray-100 text-gray-600'
+                    ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
                     ">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                        stroke="currentColor" class="size-5">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M9 9l10.5-3v10.5A2.25 2.25 0 0117.25 18a2.25 2.25 0 01-2.25-2.25v-.75a2.25 2.25 0 012.25-2.25c.792 0 1.5.408 1.908 1.026M9 9v9.75A2.25 2.25 0 016.75 21 2.25 2.25 0 014.5 18.75V18a2.25 2.25 0 012.25-2.25c.792 0 1.5.408 1.908 1.026M9 9l10.5-3" />
-                    </svg>
+                    <Music class="size-5" />
                 </div>
 
                 <div class="min-w-0 flex-1">
@@ -112,11 +95,11 @@ onBeforeUnmount(() => {
                     <div class="flex items-start justify-between gap-3">
 
                         <div class="min-w-0">
-                            <p class="truncate font-semibold text-gray-900">
+                            <p class="truncate font-semibold text-gray-900 dark:text-gray-100">
                                 {{ displayedAudio.file.name }}
                             </p>
 
-                            <p class="mt-1 text-xs text-gray-500">
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
                                 {{ formatFileSize(displayedAudio.file.size) }}
                                 ·
                                 {{ displayedAudio.file.type }}
@@ -124,8 +107,8 @@ onBeforeUnmount(() => {
                         </div>
 
                         <span class="shrink-0 rounded-full px-2.5 py-1 text-xs font-medium" :class="displayedAudio.isDraft
-                                ? 'bg-amber-100 text-amber-700'
-                                : 'bg-emerald-100 text-emerald-700'
+                            ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400'
+                            : 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400'
                             ">
                             {{
                                 displayedAudio.isDraft
@@ -143,32 +126,26 @@ onBeforeUnmount(() => {
             </div>
         </div>
 
-
         <!-- Empty state -->
-        <div v-else class="rounded-xl border border-dashed border-gray-300 p-4 text-center">
-            <p class="text-sm text-gray-500">
+        <div v-else class="rounded-xl border border-dashed border-gray-300 dark:border-gray-700 p-4 text-center">
+            <p class="text-sm text-gray-500 dark:text-gray-400">
                 Belum ada audio
             </p>
         </div>
 
-
         <!-- Upload / replace -->
         <label :for="inputId"
-            class="cursor-pointer rounded-xl border-2 border-dashed border-gray-300 p-5 text-gray-900 transition hover:border-gray-400 hover:bg-gray-50">
+            class="cursor-pointer rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-700 p-5 text-gray-900 dark:text-gray-100 transition hover:border-gray-400 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800/60">
             <div class="flex items-center justify-center gap-3">
 
-                <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                    stroke-width="1.5" stroke="currentColor" class="size-6">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M7.5 7.5h-.75A2.25 2.25 0 004.5 9.75v7.5A2.25 2.25 0 006.75 19.5h7.5A2.25 2.25 0 0016.5 17.25v-7.5A2.25 2.25 0 0014.25 7.5h-.75m0-3-3-3m0 0-3 3m3-3v11.25m6-2.25h.75A2.25 2.25 0 0121 15.75v4.5A2.25 2.25 0 0118.75 22.5h-7.5A2.25 2.25 0 019 20.25v-.75" />
-                </svg>
+                <UploadCloud class="size-6 text-gray-500 dark:text-gray-400" />
 
                 <div>
                     <p class="font-semibold">
                         {{ displayedAudio ? 'Ganti audio' : 'Upload audio' }}
                     </p>
 
-                    <p class="text-xs text-gray-500">
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
                         MP3, WAV, OGG, atau format audio lainnya
                     </p>
                 </div>
@@ -178,9 +155,10 @@ onBeforeUnmount(() => {
             <input :id="inputId" type="file" class="sr-only" accept="audio/*" @change="handleFileChange" />
         </label>
 
-
         <!-- Error -->
-        <div v-if="error" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+        <div v-if="error"
+            class="flex items-start gap-2 rounded-xl border border-rose-200 dark:border-rose-800/40 bg-rose-50 dark:bg-rose-900/20 px-4 py-3 text-sm text-rose-700 dark:text-rose-400">
+            <AlertCircle class="w-4 h-4 shrink-0 mt-0.5" />
             {{ error }}
         </div>
 
