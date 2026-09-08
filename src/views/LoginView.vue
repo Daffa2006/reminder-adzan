@@ -58,8 +58,8 @@ async function handleSubmit() {
             <main
                 class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-6">
                 <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
-                    {{ isLogin ? 'Masuk untuk menyimpan pengaturan Anda ke cloud.' : 'Buat akun untuk menyinkronkan
-                    pengaturan.' }}
+                    {{ isLogin ? "Masuk untuk menyimpan pengaturan Anda ke cloud." :
+                        "Buat akun untuk menyinkronkan pengertian" }}
                 </p>
 
                 <!-- Success message -->
