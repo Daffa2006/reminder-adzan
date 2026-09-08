@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+@theme {
+  --font-family-sans: "Jetbrains mono", sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  font-family: "Jetbrains mono", sans-serif;
+}
+
+html {
+  font-family: "Jetbrains mono", sans-serif;
+}
+
+/* Smooth transitions for dark mode */
+body {
+  @apply transition-colors duration-300;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-gray-600 rounded-full;
+}
+
+/* Progress bar animation */
+@keyframes progress {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
